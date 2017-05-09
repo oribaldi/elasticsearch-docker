@@ -56,7 +56,7 @@ RUN chown elasticsearch:elasticsearch config/elasticsearch.yml config/log4j2.pro
 USER elasticsearch
 
 RUN bin/x-pack/users useradd docker -p changeme -r superuser
-RUN bin/x-pack/certgen -s -in config/certgen_instances.yml --out config/certs.zip && unzip -d config/x-pack/ config/certs.zip && rm config/certs.zip config/certgn_instances.yml
+RUN bin/x-pack/certgen -s -in config/certgen_instances.yml --out config/certs.zip && unzip -d config/x-pack/ config/certs.zip && rm config/certs.zip config/certgen_instances.yml
 
 CMD ["/bin/bash", "bin/es-docker"]
 
