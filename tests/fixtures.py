@@ -20,7 +20,7 @@ def elasticsearch(host):
     class Elasticsearch():
         def __init__(self):
             self.url = 'http://localhost:9200'
-            self.auth = HTTPBasicAuth('elastic', 'changeme')
+            self.auth = HTTPBasicAuth('docker', 'changeme')
 
             self.assert_healthy()
 

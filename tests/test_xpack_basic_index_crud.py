@@ -1,10 +1,12 @@
 from .fixtures import elasticsearch
 from requests import codes
+import pytest
 
 
+@pytest.mark.xfail(raises=AssertionError, reason='Not yet implemented')
 def test_password_change(elasticsearch):
     try:
-        elasticsearch.set_password('elastic', 'newpass')
+        elasticsearch.set_password('docker', 'newpass')
         assert elasticsearch.get().status_code == codes.unauthorized
     finally:
         elasticsearch.reset()
