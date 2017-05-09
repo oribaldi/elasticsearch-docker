@@ -16,7 +16,7 @@ LABEL maintainer "Elastic Docker Team <docker@elastic.co>"
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 ENV JAVA_HOME /usr/lib/jvm/java-1.8-openjdk
 
-RUN yum install -y java-1.8.0-openjdk-headless wget which && yum clean all
+RUN yum install -y java-1.8.0-openjdk-headless wget which unzip && yum clean all
 
 RUN groupadd -g 1000 elasticsearch && adduser -u 1000 -g 1000 -d /usr/share/elasticsearch elasticsearch
 
@@ -46,8 +46,7 @@ RUN for PLUGIN_TO_INST in {{ plugin_list }}; do eval ES_JAVA_OPTS="-Des.plugins.
 RUN for PLUGIN_TO_INST in {{ plugin_list }}; do elasticsearch-plugin install --batch "$PLUGIN_TO_INST"; done
 {% endif-%}
 
-COPY elasticsearch.yml config/
-COPY log4j2.properties config/
+COPY elasticsearch.yml certgen_instances.yml log4j2.properties config/
 COPY bin/es-docker bin/es-docker
 
 USER root
@@ -55,6 +54,10 @@ RUN chown elasticsearch:elasticsearch config/elasticsearch.yml config/log4j2.pro
     chmod 0750 bin/es-docker
 
 USER elasticsearch
+
+RUN bin/x-pack/users useradd docker -p changeme -r superuser
+RUN bin/x-pack/certgen -s -in config/certgen_instances.yml --out config/certs.zip && unzip -d config/x-pack/ config/certs.zip && rm config/certs.zip config/certgn_instances.yml
+
 CMD ["/bin/bash", "bin/es-docker"]
 
 EXPOSE 9200 9300

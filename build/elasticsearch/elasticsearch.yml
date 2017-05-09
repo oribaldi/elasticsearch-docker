@@ -6,8 +6,22 @@ network.host: 0.0.0.0
 # Details: https://github.com/elastic/elasticsearch/pull/17288
 discovery.zen.minimum_master_nodes: 1
 
-# Ease the out of the box experience with x-pack
-# Details: https://github.com/elastic/elasticsearch/pull/23598
-discovery.type: "single-node"
-# xpack.security.authc.token.enabled: false
-# xpack.security.authc.accept_default_password: false
+xpack.security.authc.token.enabled: false
+# 6.0.0 x-pack enforces transport.ssl
+# Do not verify hostname/IP with the simple certs we prebake in the image.
+xpack.ssl.verification_mode: certificate
+xpack.ssl.key: x-pack/node01/node01.key
+xpack.ssl.certificate: x-pack/node01/node01.crt
+xpack.ssl.certificate_authorities: [ "x-pack/ca/ca.crt" ]
+
+# 6.0.0 x-pack requires disabling default_password in production mode.
+xpack.security.authc.accept_default_password: false
+
+# Use the file realm to let us pre-provision a superuser.
+xpack:
+  security:
+    authc:
+      realms:
+        file1:
+          type: file
+          order: 0
