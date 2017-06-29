@@ -1,13 +1,5 @@
 # This Dockerfile was generated from templates/Dockerfile.j2
 {% set plugin_list = 'x-pack ingest-user-agent ingest-geoip' %}
-{% if staging_build_num -%}
-{%   set version_tag = elastic_version + '-' + staging_build_num -%}
-{%   set url_root = 'http://staging.elastic.co/%s/downloads/elasticsearch' % version_tag -%}
-{% else -%}
-{%   set version_tag = elastic_version -%}
-{%   set url_root = 'https://artifacts.elastic.co/downloads/elasticsearch' -%}
-{% endif -%}
-{% set tarball = 'elasticsearch-%s.tar.gz' % elastic_version -%}
 
 
 FROM centos:7
@@ -17,23 +9,16 @@ ENV ELASTIC_CONTAINER true
 ENV PATH /usr/share/elasticsearch/bin:$PATH
 ENV JAVA_HOME /usr/lib/jvm/jre-1.8.0-openjdk
 
-RUN yum update -y && yum install -y java-1.8.0-openjdk-headless wget which && yum clean all
+RUN yum update -y && yum install -y java-1.8.0-openjdk-headless which && yum clean all
 
 RUN groupadd -g 1000 elasticsearch && adduser -u 1000 -g 1000 -d /usr/share/elasticsearch elasticsearch
 
+COPY elasticsearch-{{ elastic_version }} /usr/share/elasticsearch
+
 WORKDIR /usr/share/elasticsearch
 
-# Download/extract defined ES version. busybox tar can't strip leading dir.
-RUN wget --progress=bar:force {{ url_root }}/{{ tarball }} && \
-    EXPECTED_SHA=$(wget -O - {{ url_root }}/{{ tarball }}.sha1) && \
-    test $EXPECTED_SHA == $(sha1sum {{ tarball }} | awk '{print $1}') && \
-    tar zxf {{ tarball }} && \
-    chown -R elasticsearch:elasticsearch elasticsearch-{{ elastic_version }} && \
-    mv elasticsearch-{{ elastic_version }}/* . && \
-    rmdir elasticsearch-{{ elastic_version }} && \
-    rm elasticsearch-{{ elastic_version }}.tar.gz
-
-RUN set -ex && for esdirs in config data logs; do \
+RUN chown -R elasticsearch:elasticsearch . && \
+    set -ex && for esdirs in config data logs; do \
         mkdir -p "$esdirs"; \
         chown -R elasticsearch:elasticsearch "$esdirs"; \
     done

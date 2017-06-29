@@ -7,8 +7,12 @@ endif
 
 ifdef STAGING_BUILD_NUM
 VERSION_TAG := $(ELASTIC_VERSION)-$(STAGING_BUILD_NUM)
+URL_ROOT := http://staging.elastic.co/$(VERSION_TAG)/downloads/elasticsearch
+EXTRACTED_TARBALL := build/elasticsearch/elasticsearch-$(ELASTIC_VERSION)-$(STAGING_BUILD_NUM)
 else
 VERSION_TAG := $(ELASTIC_VERSION)
+URL_ROOT := http://artifacts.elastic.co/downloads/elasticsearch
+EXTRACTED_TARBALL := build/elasticsearch/elasticsearch-$(ELASTIC_VERSION)
 endif
 
 ELASTIC_REGISTRY := docker.elastic.co
@@ -34,6 +38,7 @@ clean:
 
 pristine: clean
 	docker rmi -f $(VERSIONED_IMAGE)
+	rm -rf build/elasticsearch/elasticsearch-*
 
 run: run-single
 
@@ -44,7 +49,19 @@ run-cluster: build docker-compose.yml
 	$(DOCKER_COMPOSE) up elasticsearch1 elasticsearch2
 
 # Build docker image: "elasticsearch:$(VERSION_TAG)"
+#
+# You can provide the Elasticsearch software manually, by placing it at
+# $EXTRACTED_TARBALL. eg. at 'build/elasticsearch/elasticsearch-5.5.0/'.
+#
+# If you don't manually place the software, this Makefile will attempt to
+# download and extract the appropriate package from the web, based on
+# $ELASTIC_VERSION and $STAGING_BUILD_NUM.
 build: clean dockerfile
+	if [ \! -f $(EXTRACTED_TARBALL)/bin/elasticsearch ]; then \
+	 mkdir -p $(EXTRACTED_TARBALL) && \
+	  curl --location $(URL_ROOT)/elasticsearch-$(ELASTIC_VERSION).tar.gz | \
+	    tar --strip-components=1 -C $(EXTRACTED_TARBALL) -zxf - ;\
+        fi
 	docker build -t $(VERSIONED_IMAGE) build/elasticsearch
 
 # Push the image to the dedicated push endpoint at "push.docker.elastic.co"
