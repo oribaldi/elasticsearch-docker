@@ -6,6 +6,8 @@ version: '2'
 services:
   elasticsearch1:
     environment:
+      # Define initial password for elastic user
+      - BOOTSTRAP_PWD=initialpwd01
       # Try setting a few options with environment variables.
       - cluster.name=docker-test-cluster
       - node.name=docker-test-node-1
@@ -23,6 +25,7 @@ services:
 
   elasticsearch2:
     environment:
+      - BOOTSTRAP_PWD=initialpwd01
       - cluster.name=docker-test-cluster
       - node.name=docker-test-node-2
       - thread_pool.bulk.queue_size=500

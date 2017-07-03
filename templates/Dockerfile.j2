@@ -3,6 +3,9 @@
 {% if staging_build_num -%}
 {%   set version_tag = elastic_version + '-' + staging_build_num -%}
 {%   set url_root = 'http://staging.elastic.co/%s/downloads/elasticsearch' % version_tag -%}
+{% elif 'snapshot' in elastic_version|lower -%}
+{%   set version_tag = elastic_version -%}
+{%   set url_root = 'http://snapshots.elastic.co/downloads/elasticsearch' -%}
 {% else -%}
 {%   set version_tag = elastic_version -%}
 {%   set url_root = 'https://artifacts.elastic.co/downloads/elasticsearch' -%}
@@ -43,6 +46,10 @@ USER elasticsearch
 # Install x-pack and also the ingest-{agent,geoip} modules required for Filebeat
 {% if staging_build_num -%}
 RUN for PLUGIN_TO_INST in {{ plugin_list }}; do eval ES_JAVA_OPTS="-Des.plugins.staging={{ staging_build_num }}" elasticsearch-plugin install --batch "$PLUGIN_TO_INST"; done
+{% elif 'snapshot' in elastic_version|lower -%}
+# For the moment, rely on local x-pack zip file for snapshot builds.
+COPY {{ base_xpath_path }}/x-pack-{{ elastic_version }}.zip /tmp/x-pack-{{ elastic_version }}.zip
+RUN elasticsearch-plugin install file:///tmp/x-pack-{{ elastic_version }}.zip
 {% else -%}
 RUN for PLUGIN_TO_INST in {{ plugin_list }}; do elasticsearch-plugin install --batch "$PLUGIN_TO_INST"; done
 {% endif-%}

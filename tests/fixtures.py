@@ -11,6 +11,9 @@ retry_settings = {
     'wait_exponential_max': 10000
 }
 
+# The bootstrap password is defined via an env var in docker-compose.yml.
+bootstrap_pwd = 'initialpwd01'
+elastic_password = 'elasticuserpwd001'
 default_index = 'testdata'
 http_api_headers = {'Content-Type': 'application/json'}
 
@@ -20,7 +23,10 @@ def elasticsearch(host):
     class Elasticsearch():
         def __init__(self):
             self.url = 'http://localhost:9200'
-            self.auth = HTTPBasicAuth('elastic', 'changeme')
+            self.auth = HTTPBasicAuth('elastic', bootstrap_pwd)
+
+            self.set_password('elastic', elastic_password)
+            self.auth = HTTPBasicAuth('elastic', elastic_password)
 
             self.assert_healthy()
 
@@ -82,6 +88,9 @@ def elasticsearch(host):
             nodes = self.get('/_nodes/stats/jvm').json()['nodes'].values()
             return [node['jvm'] for node in nodes]
 
+        # We can't assert_healthy(), as the only accessible endpoint
+        # with the bootstraped password is the one to set the password
+        @retry(**retry_settings)
         def set_password(self, username, password):
             return self.put('/_xpack/security/user/%s/_password' % username,
                             json={"password": password})
